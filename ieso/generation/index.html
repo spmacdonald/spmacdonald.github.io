@@ -1,0 +1,156 @@
+<!doctype html>
+<title>generation</title>
+<script src="http://d3js.org/d3.v2.min.js"></script>
+<script src="cubism.v1.js"></script>
+
+<style>
+  @import url(../../style.css);
+
+  svg {
+    font: 10px sans-serif;
+  }
+
+  .axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .axis {
+    font: 10px sans-serif;
+  }
+
+  .axis text {
+    -webkit-transition: fill-opacity 250ms linear;
+  }
+
+  .axis path {
+    display: none;
+  }
+
+  .axis line {
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .horizon {
+    border-bottom: solid 1px #000;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .horizon {
+    border-top: solid 1px #000;
+    border-bottom: solid 1px #000;
+  }
+
+  .horizon + .horizon {
+    border-top: none;
+  }
+
+  .horizon canvas {
+    display: block;
+  }
+
+  .horizon .title,
+  .horizon .value {
+    bottom: 0;
+    line-height: 30px;
+    margin: 0 6px;
+    position: absolute;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    white-space: nowrap;
+  }
+
+  .horizon .title {
+    left: 0;
+  }
+
+  .horizon .value {
+    right: 0;
+  }
+
+  .line {
+    background: #000;
+    opacity: .2;
+    z-index: 2;
+  }
+</style>
+
+<header>
+  <aside>May 20, 2012</aside>
+  <a href="../../">what else is there?</a>
+</header>
+
+<h1>power utilization</h1>
+
+<div id="vis"></div>
+<aside>
+  Mouse over the graph to inspect values.
+</aside>
+
+<p>Using <a href="http://square.github.com/cubism/">cubism</a> it is easy to create real-time dashboards.  In this example, for the purpose of demonstration, I have modified the cubism library to read a CSV file that I created from the public <a href="http://reports.ieso.ca/public/GenOutputCapability/">generation data</a>.
+
+<p>Each second that passes corresponds to one row of the dataset, which shows <em>hourly, average utilization by fuel type.</em> This is calculated by computing the ratio of generator output to capability and taking the average over fuel type.  For example a value of 100 means that all the generators of that particular fuel type would be operating at maximum capacity for that hour.
+
+<p>The type of plots displayed here are called <a href="http://vis.berkeley.edu/papers/horizon/">horizon charts</a> which allow information to be compactly represented in a small amount of vertical space.
+
+<p>Thanks to <a href="http://bost.ocks.org/mike/">Mike Bostock</a> for creating the great <a href="https://github.com/square/cubism">cubism</a> and <a href="http://d3js.org/">d3</a> libraries.
+
+
+<script>
+d3.csv("utilization.csv", function(data) {
+  if (!data) return new Error("unable to load data");
+
+  var context = cubism.context()
+    .serverDelay(10)
+    .clientDelay(0)
+    .step(1e3)
+    .size(960);
+
+  var nuclear = context.csv(data).metric("nuclear"),
+      coal = context.csv(data).metric("coal"),
+      gas = context.csv(data).metric("gas"),
+      hydro = context.csv(data).metric("hydro"),
+      wind = context.csv(data).metric("wind"),
+      other = context.csv(data).metric("other");
+
+  d3.select("#vis").call(function(div) {
+
+    div.append("div")
+        .attr("class", "axis")
+        .call(context.axis().orient("top"));
+
+    div.selectAll(".horizon")
+        .data([nuclear, coal, gas, hydro, wind, other])
+      .enter().append("div")
+        .attr("class", "horizon")
+        .call(context.horizon().extent([0, 100]).height(100));
+
+    div.append("div")
+        .attr("class", "rule")
+        .call(context.rule());
+  });
+
+  context.on("focus", function(i) {
+    d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+  });
+
+});
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-27206978-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>

@@ -1,0 +1,179 @@
+<!doctype html>
+<title>dod</title>
+<script src="http://d3js.org/d3.v2.min.js"></script>
+<script src="crossfilter.js"></script>
+<script src="dod.js"></script>
+
+<style>
+
+@import url(../../style.css);
+
+
+#charts {
+  padding: 10px 0;
+}
+
+#hour-chart {
+  width: 260px;
+}
+
+#price-chart {
+  width: 740px;
+}
+
+#demand-chart {
+  width: 740px;
+}
+
+#cushion-chart {
+  width: 740px;
+}
+
+#date-chart {
+  width: 960px;
+}
+
+.chart {
+  display: inline-block;
+  height: 151px;
+  margin-bottom: 20px;
+}
+
+.reset {
+  padding-left: 1em;
+  font-size: smaller;
+  color: #ccc;
+}
+
+.background.bar {
+  fill: #ccc;
+}
+
+.foreground.bar {
+  fill: midnightblue;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.brush rect.extent {
+  fill: steelblue;
+  fill-opacity: .125;
+}
+
+.brush .resize path {
+  fill: #eee;
+  stroke: #666;
+}
+
+#dod-list {
+  min-height: 1024px;
+}
+
+#dod-list .date,
+#dod-list .day {
+  margin-bottom: .4em;
+}
+
+#dod-list .dod {
+  line-height: 1.5em;
+  background: #eee;
+  width: 640px;
+  margin-bottom: 1px;
+}
+
+#dod-list .time {
+  color: #999;
+}
+
+#dod-list .dod div {
+  display: inline-block;
+  width: 160px;
+}
+
+#dod-list .low {
+  color: green;
+}
+
+#dod-list .high {
+  color: red;
+}
+
+aside {
+  position: absolute;
+  left: 740px;
+  font-size: smaller;
+  width: 220px;
+}
+
+</style>
+
+<header>
+  <aside>May 27, 2012</aside>
+  <a href="../../">what else is there?</a>
+</header>
+
+<h1>details on demand</h1>
+
+<p>Using the awesome <a href="http://square.github.com/crossfilter/">crossfilter</a> library by <a href="http://bost.ocks.org/mike/">Mike Bostock</a> it is possible to create interactive visualizations which allow exploration of large multivariate datasets.  For this example I have collected one year worth of data from the Ontario Electric System Operator, namely the <a href="http://reports.ieso.ca/public/Adequacy/">adequacy</a> reports.
+
+<p>When the user clicks and drags on the different distributions, the views simultaneously update themselves incrementally.  The power of this method is that it allows the user to find things he or she may not have expected.
+
+<p>For example, when the <a href="javascript:filter([null, null, [22000, 26000], [0, 30], null])">supply cushion</a> is tight and demand is high, the corresponding prices are almost always greater than 90% of the other prices in this dataset.
+
+<p>Another interesting thing to try is to create a <a href="javascript:filter([null, null, [16000, 18000], null, null])">window</a> of demands, and slide it around.  Of course we expect that when demand is higher, prices will be higher, but could you guess what the <em>distribution</em> of prices would look like?
+
+<aside>Click and drag on the distributions below.</aside>
+
+<div id="charts">
+  <div id="hour-chart" class="chart">
+    <div class="title">Hour Endings</div>
+  </div>
+  <aside>For the purposes of demonstration I have clipped the prices to be between 0 and 100 $/MWh.</aside>
+  <div id="price-chart" class="chart">
+    <div class="title">Prices</div>
+  </div>
+  <aside>Demands here are the sum of Ontario demand and OR requirements.</aside>
+  <div id="demand-chart" class="chart">
+    <div class="title">Demands</div>
+  </div>
+  <aside>The supply cushion is defined as the sum of internal resources offered plus total imports offered minus offered linked wheels minus demand minus OR requirements, as a percentage of demand and OR requirements.</aside>
+  <div id="cushion-chart" class="chart">
+    <div class="title">Supply Cushions</div>
+  </div>
+  <div id="date-chart" class="chart">
+    <div class="title">Dates</div>
+  </div>
+</div>
+
+
+<br>
+<p>The table below shows the top 40 filtered elements on the multivariate dataset.  Each numerical value is colored red or green depending on its quantile: the bottom 10% are assigned to the color red and the top 10% are assigned to the color green.
+<br>
+
+<div id="lists">
+  <div id="dod-list" class="list"></div>
+</div>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-27206978-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>

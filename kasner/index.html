@@ -1,0 +1,282 @@
+<!DOCYTPE html>
+<meta charset="utf-8">
+<title>a programming puzzle</title>
+<style>
+  @import url(../style.css);
+  @import url(../github.css);
+
+  svg {
+    font: 10px sans-serif;
+  }
+
+  .container {
+    width: 720px;
+    display: table;
+  }
+
+  .container div.span5 {
+    width: 144px;
+    float: left;
+  }
+
+  .container div.span2 {
+    width: 360px;
+    float: left;
+  }
+
+  .caption {
+    font-size: small;
+    padding: 10px;
+    display: block;
+  }
+
+  path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+  }
+
+  .node {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  #instructions {
+    text-align: center;
+  }
+</style>
+
+<header>
+  <aside>November 25, 2012</aside>
+  <a href="../">what else is there?</a>
+</header>
+
+<h1>a programming puzzle</h1>
+
+<p>Sometimes one solves problems for problem solving sake.  This project has engaged me over the years and in studying it, I have been exposed to many interesting concepts which I would like to share with you.  So without further ado, the problem:
+
+<div id="figure1" class="container">
+  <div class="span5">
+    <div id="figure1-1"></div>
+    <span class="caption">1. Draw a triangle around a circle</span>
+  </div>
+  <div class="span5">
+    <div id="figure1-2"></div>
+    <span class="caption">2. Choose any point on the circle</span>
+  </div>
+  <div class="span5">
+    <div id="figure1-3"></div>
+    <span class="caption">3. Draw a line between the point and the closest triangle corner</span>
+  </div>
+  <div class="span5">
+    <div id="figure1-4"></div>
+    <span class="caption">4. Set the next point to be where the line intersects the circle</span>
+  </div>
+  <div class="span5">
+    <div id="figure1-5"></div>
+    <span class="caption">5. Repeat steps three to five</span>
+  </div>
+</div>
+
+
+<p>The construction above defines an <a href="http://en.wikipedia.org/wiki/Iterated_function">iterative map</a>, and the task is to find the <b>fixed points</b> of the map, which are the points which come back to themselves after \(n\) applications of the map. Mathematically this is expressed as:  \(f^n(x) = x \) for some point \(x\) and integer \(n\).
+
+<aside>
+    <b>periodic sequences</b> are the words which represent the fixed points of the map.
+    <br><br>
+    <b>periodic paths</b> are the set of Cartesian coordinates which represent the fixed points of the map.
+</aside>
+
+<p>This article is organized as follows: first I explore the combinatorial aspect of the problem and give a non-rigorous argument for a generating function which counts the number of <b>periodic sequences</b> for an integer \(n\).  Second, I describe the geometrical algorithm I used to find the Cartesian coordinates of the <b>periodic paths</b>.
+
+<p>To get an idea of the behaviour of the map, consider the diagram below.  By assigning labels to the triangle vertices we can represent paths as a word over a three letter alphabet, {0, 1, 2}. Play with the slider on the right to change the length of the path.  Move the knob to see the map in action.  Notice how the path sequences change.
+
+<aside>
+  Drag the knob to the left.<br><br>
+  Move the slider to change how many lines are drawn.<br><br>
+  <input type="range" min="1" max="10" value="1">
+</aside>
+<div class="container">
+    <div class="span2">
+        <div id="figure2"></div>
+    </div>
+    <div class="span2">
+        <div id="ringlabel">Path sequence: move the knob!</div>
+    </div>
+</div>
+
+<h2>Combinatorics</h2>
+<p>The goal of this section is to derive a counting function which enumerates the periodic sequences. Begin by considering the set of all possible sequences that the iterative map can generate.  If we arbitrarily begin at 0, then the set of all sequences is a binary tree which looks like:
+
+<pre>
+0
+01, 02
+010, 012, 020, 021
+0101, 0102, 0120, 0121, 0201, 0202, 0210, 0212
+</pre>
+
+<p>Thus for sequences of length \(n\) there are a total of \(2^n\) possible map sequences.  To generate them I wrote a small python function:
+
+<pre><code class="python">
+def generate_sequences(n):
+    """Generate all possible map sequences.
+
+    >>> list(generate_sequences(3))
+    [(0, 1, 0), (0, 1, 2), (0, 2, 0), (0, 2, 1)]
+    """
+
+    sequence = [i % 2 for i in range(n)]
+
+    def next_sequence(i):
+        sequence[i] += 1
+        if sequence[i] > 2:
+            sequence[i] = 0
+            next_sequence(i - 1)
+        if sequence[i - 1] == sequence[i]:
+            next_sequence(i)
+
+    for _ in range(2 ** (n - 1)):
+        yield tuple(sequence)
+        next_sequence(n - 1)
+</code></pre>
+
+<p>By examining the rules of the iterative map, it is apparent that for a sequence to be periodic the following conditions must be true:
+
+<ol>
+    <li>The word must contain at least one of each letter: {0, 1, 2}</li>
+    <li>The word must not contain equal adjacent letters</li>
+</ol>
+
+<p>The first condition is true by construction, for a path to be periodic it must visit all the triangle corners at least once.  The second condition at first glance seems trivially true, however if we consider all the conjugates of a word then it is possible for the condition to be violated.  Since it does not matter which triangle vertex we start at, the words are equivalent under circular rotation:
+
+$$ 012 \equiv 120 \equiv 201 $$
+
+<p>As a complete example, consider the set of all length 4 words:
+
+<pre>
+0101    fails condition 1
+0102    periodic
+0120    fails condition 2
+0121    periodic
+0201    periodic
+0202    fails condition 1
+0210    fails condition 2
+0212    periodic
+</pre>
+
+<p>Of the 4 words which pass the rules, 2 are equivalent: 0102 and 0201.  Thus there are a total of 3 periodic sequences of length 4.
+
+To generate the periodic sequences I wrote another python function:
+<pre><code class="python">
+def generate_periodic_sequences(n):
+    """Generates the periodic map sequences.
+
+    >>> list(generate_periodic_sequences(4))
+    [(0, 1, 0, 2), (0, 1, 2, 1), (0, 2, 1, 2)]
+    """
+
+    def is_periodic(sequence):
+        try:
+            sequence.index(0)
+            sequence.index(1)
+            sequence.index(2)
+        except ValueError:
+            return False
+
+        for i in range(len(sequence) - 1):
+            if sequence[i] == sequence[i + 1]:
+                return False
+
+        return True
+
+    seen_sequences = set()
+
+    for s in generate_sequences(n):
+        rotations = [s[i:] + s[:i] for i in range(len(s))]
+        least_rotation = sorted(rotations)[0]
+        if is_periodic(least_rotation):
+            seen_sequences.add(least_rotation)
+
+    for s in sorted(seen_sequences):
+        yield s
+</code></pre>
+
+<aside>A word is called <b>primitive</b> if it is not empty and not a proper power of another word.</aside>
+<p>Any word which satisfies the above rules will represent a periodic sequence.  The rules also ensure that the periodic sequences have a very special property: they are <b>primitive words</b>.  Thus we can accomplish our goal of finding a counting function by enumerating the number of primitive words.
+
+<p>It turns out that this is a well known result in the combinatorics of words, so I will skip the details of the proof which can be found <a href="http://www.math.utu.fi/en/home/karhumak/combwo.pdf">here</a>.
+
+<p>The formula for the enumeration of primitive words of length \(n\) on \(k\) symbols is often called Witt's formula and is:
+
+$$ \psi_k(n) = \frac{1}{n} \sum_{d|n} k^{n/d} \mu(d) $$
+
+<p>Where \(\mu\) is Mobius function.  See pages 14-16 of the above link for details on the derivation of this equation.  The values of this function for the case \(k=2\) belong to the integer sequence <a href="http://oeis.org/A001037">A001037</a> on Neil Sloane's OEIS.  The values of the sequence A001037 agree with the output from my counting algorithm exactly in the case when \(n\) is prime.  For the composite integers, we have to account for over counting in the algorithm.  The reason is best illustrated with an example.  If \(n=9\) then the counting algorithm will include the periodic paths for \(n=3\) since 9 is divisible by 3.  When this over counting is accounted for, the agreement with sequence A001037 up to \(n=33\) is exact.  For larger values of \(n\) I am simply unable to enumerate the periodic paths algorithmically as it is necessary to store an exponentially increasing number of \(n\)-letter words in memory.  Nevertheless, the agreement of so many values is very strong empirical evidence that the counting formula is correctly enumerating the periodic paths.
+
+
+<h2>Geometry</h2>
+<p>This section describes the algorithm used to find the Cartesian coordinates of the <b>periodic paths</b>.  The panel below graphically illustrates the behaviour of the algorithm for the periodic path represented by the sequence 0121.
+
+<div id="figure4" class="container">
+  <div class="span5">
+    <div id="figure4-1"></div>
+    <center><span style="background: #1B9E77">0</span>121</center>
+  </div>
+  <div class="span5">
+    <div id="figure4-2"></div>
+    <center><span style="background: #1B9E77">0</span><span style="background: #D95F02">1</span>21</center>
+  </div>
+  <div class="span5">
+    <div id="figure4-3"></div>
+    <center><span style="background: #1B9E77">0</span><span style="background: #D95F02">1</span><span style="background: #7570B3">2</span>1</center>
+  </div>
+  <div class="span5">
+    <div id="figure4-4"></div>
+    <center><span style="background: #1B9E77">0</span><span style="background: #D95F02">1</span><span style="background: #7570B3">2</span><span style="background: #E7298A">1</span></center>
+  </div>
+  <div class="span5">
+    <div id="figure4-5"></div>
+    <center><span style="background: #66A61E">0</span><span style="background: #D95F02">1</span><span style="background: #7570B3">2</span><span style="background: #E7298A">1</span></center>
+  </div>
+</div>
+
+<p>Imagine that the triangle vertices in the panel above are labeled in the same way as the figure with the knob and slider.  We assign the arc range highlighted in green to the letter 0.  If the next letter in the sequence is a 1, then the arc range from which the path originated from must be represented in orange.  <em>Every point in the orange range maps one-to-one with the points in the green range under the action of the map</em>.  By looping over the letters in the path sequence until the width of the arc is very small we can find the Cartesian coordinates of the paths to any arbitrary tolerance.
+
+<p>In the final figure below, I have created an animation that demonstrates how the algorithm to find the coordinates works for different sequences.
+
+<aside>Click on one of the highlighted tree nodes.</aside>
+<div id="figure3" class="container">
+  <div class="span2">
+    <div id="figure3-1"></div>
+  </div>
+  <div class="span2">
+    <div id="figure3-2"></div>
+  </div>
+</div>
+
+
+
+<script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script src="http://d3js.org/d3.v2.min.js"></script>
+<script src="figure1.js"></script>
+<script src="figure2.js"></script>
+<script src="figure3.js"></script>
+<script src="figure4.js"></script>
+<script src="../highlight.min.js"></script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-27206978-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+

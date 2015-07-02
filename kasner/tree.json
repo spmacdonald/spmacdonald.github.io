@@ -1,0 +1,43 @@
+{
+  "name": "0",
+  "children": [
+  {
+    "name": "01",
+    "children": [
+    {
+      "name": "010",
+      "children": [
+        {"name": "0101"},
+        {"name": "0102"}
+      ]
+    },
+    {
+      "name": "012",
+      "children": [
+        {"name": "0120"},
+        {"name": "0121"}
+      ]
+    }
+    ]
+  },
+  {
+    "name": "02",
+    "children": [
+    {
+      "name": "020",
+      "children": [
+        {"name": "0201"},
+        {"name": "0202"}
+      ]
+    },
+    {
+      "name": "021",
+      "children": [
+        {"name": "0210"},
+        {"name": "0212"}
+      ]
+    }
+    ]
+  }
+  ]
+}
